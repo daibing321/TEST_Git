@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+     <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cdu.edu.web.dao.GroupMapper">
+
+  <!-- 返回类型定义 -->
+  <resultMap type="Group" id="groupretuenmap">
+    <id column="g_id" property="id" />
+    <result column="g_name" property="name" />
+    <result column="g_position" property="position" />
+    <!-- students对应javabean中的属性名称 column是student关联group中的外键 javaType是必写元素 oftype是对应的别名 -->
+    <collection property="students" column="g_id" javaType="ArrayList" ofType="Student" resultMap="resultStudent">
+      <!-- <id column="s_id" property="id" /> <result column="s_name" property="name" /> <result column="s_birth" property="date" /> -->
+    </collection>
+  </resultMap>
+
+  <resultMap type="Student" id="resultStudent">
+    <id column="s_id" property="id" />
+    <result column="s_name" property="name" />
+    <result column="s_birth" property="date" />
+  </resultMap>
+
+  <sql id="selectItems">
+    select * FROM
+  </sql>
+
+  <!-- mybatis缓存 -->
+  <cache eviction="LRU" flushInterval="600000" size="1024" readOnly="false" />
+
+  <select id="getGroup" parameterType="int" resultMap="groupretuenmap">
+    SELECT * FROM g_group g right JOIN student s ON g.g_id=s.g_id where s_id=#{id}
+  </select>
+
+  <!-- if动态构建sql -->
+  <select id="getGroup1" parameterType="Student" resultMap="groupretuenmap">
+    SELECT * FROM g_group g right JOIN student s ON g.g_id=s.g_id where 1=1
+
+    <if test="id!=null and id!=''">
+      and s_id=#{id,javaType=int}
+     </if>
+    <if test="name!=null and name!=''">
+      and s_name =#{name}
+    </if>
+  </select>
+
+  <!-- when动态构建sql 類似java中的case 只能滿足一個條件 -->
+  <select id="getGroup2" parameterType="Student" resultMap="groupretuenmap">
+    SELECT * FROM g_group g right JOIN student s ON g.g_id=s.g_id where 1=1
+    <if test="id!=null and id!=''">
+      and s_id=#{id,javaType=int}
+     </if>
+    <if test="name!=null and name!=''">
+      <choose>
+        <when test="name=='xuya'">
+          and s_name = #{name}
+         </when>
+        <when test="name=='daibing4'">
+          and s_name = #{name}
+         </when>
+        <otherwise>
+          and s_name = #{name}
+         </otherwise>
+      </choose>
+    </if>
+  </select>
+
+
+  <!-- where动态构建sql where：防止sql前面的and 或者是or 太多 它會自動去除 -->
+  <select id="getGroup3" parameterType="Student" resultMap="groupretuenmap">
+    SELECT * FROM g_group g right JOIN student s ON g.g_id=s.g_id
+    <where>
+      <if test="id!=null and id!=''">
+        and s_id=#{id,javaType=int}
+     </if>
+      <if test="name!=null and name!=''">
+        <choose>
+          <when test="name=='xuya'">
+            and s_name = #{name}
+         </when>
+          <when test="name=='daibing4'">
+            and s_name = #{name}
+         </when>
+          <otherwise>
+            and s_name = #{name}
+         </otherwise>
+        </choose>
+      </if>
+    </where>
+  </select>
+
+  <!-- foreach动态构建sql where：防止sql前面的and 或者是or 太多 它會自動去除 -->
+  <select id="getGroup4" parameterType="list" resultMap="groupretuenmap">
+   <!-- 如果有特殊符号 使用 <![CDATA[]]>-->
+    <include refid="selectItems" />
+    g_group g right JOIN student s ON g.g_id=s.g_id
+    <where>
+      s.s_id in
+      <foreach index="index" item="item" collection="list" open="(" separator="," close=")">
+        #{item}
+      </foreach>
+    </where>
+  </select>
+
+
+</mapper>
